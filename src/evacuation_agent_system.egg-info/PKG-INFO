@@ -1,0 +1,253 @@
+Metadata-Version: 2.4
+Name: evacuation-agent-system
+Version: 0.1.0
+Summary: Evacuation QA agent system with LangChain, LangGraph and RAG.
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: langchain>=0.3.0
+Requires-Dist: langchain-community>=0.3.0
+Requires-Dist: langchain-openai>=0.2.0
+Requires-Dist: langgraph>=0.2.0
+Requires-Dist: faiss-cpu>=1.8.0
+Requires-Dist: pydantic>=2.7.0
+Requires-Dist: python-dotenv>=1.0.1
+Requires-Dist: pypdf>=5.0.0
+Requires-Dist: rank-bm25>=0.2.2
+
+﻿# Evacuation Agent System
+
+一个面向“疏散/逃生/应急撤离”问答的智能体系统示例，使用：
+
+- `LangChain` 负责模型调用、文档切分、混合检索与重排
+- `LangGraph` 负责多阶段智能体编排
+- `Hybrid RAG + Rerank + Agentic 自检` 负责将疏散知识、法规和场景证据稳健注入回答
+
+该系统适合回答如下问题：
+
+- 火灾时高层建筑如何组织疏散？
+- 医院、学校、商场、地铁站的疏散策略有什么不同？
+- 如何为某类场景生成简化版疏散建议？
+- 当信息不完整时，如何输出更稳健、更保守的疏散回答？
+
+## 1. 系统目标
+
+相比普通问答，本系统重点解决以下问题：
+
+1. 疏散回答具有安全风险，不能只追求“像答案”，必须追求“稳健”
+2. 用户问题常常缺少关键上下文，例如建筑类型、人数、火源位置、是否有人行动受限
+3. 回答需要兼顾速度、可执行性、来源依据和不确定性提示
+4. 不同场景的最佳策略不同，不能用单轮通用模板硬答
+
+因此系统采用 `风险分级 + Hybrid RAG + 检索自检 + 回答自检修正` 的图式流程。
+
+## 2. 架构概览
+
+```text
+User Query
+   |
+   v
+[Risk & Intent Classifier]
+   |
+   v
+[Hybrid Retrieve]
+(Dense MMR + BM25)
+   |
+   v
+[Rerank]
+(semantic rerank)
+   |
+   v
+[Retrieval Audit]
+   |\
+   | \ insufficient
+   |  --> [Refine Queries] --> back to Hybrid Retrieve
+   |
+   v
+[Draft Generator]
+   |
+   v
+[Grounding & Safety Check]
+   |
+   +--> insufficient / unsafe --> [Repair]
+   |
+   v
+ Final Answer
+```
+
+## 3. 核心策略设计
+
+### 3.1 风险分级策略
+
+先判断用户问题属于哪类：
+
+- `instructional`: 需要方案、流程、步骤
+- `scenario_analysis`: 需要对具体场景做推理
+- `policy_knowledge`: 需要解释制度、规范、原则
+- `real_time_emergency`: 疑似正在发生疏散事件
+
+同时判断风险等级：
+
+- `low`: 通用知识解释
+- `medium`: 与具体场所或流程设计有关
+- `high`: 疑似真实紧急事件、涉及生命危险
+
+高风险问题触发保守模式：
+
+- 优先给出立即行动建议
+- 明确提示遵循现场广播、消防控制室、安保和应急部门指令
+- 不输出过度细化且未经确认的危险操作建议
+- 缺失关键信息时，不假设安全条件成立
+
+### 3.2 Hybrid RAG + Rerank 策略
+
+知识库建议分层：
+
+1. `通用疏散原则`
+2. `建筑类型知识`
+3. `特殊人群策略`
+4. `风险事件知识`
+5. `组织与指挥流程`
+
+检索策略：
+
+- 先对问题做“场景结构化”，提取建筑类型、事件类型、人群特征、约束条件
+- 使用 `Dense(MMR)` 与 `Sparse(BM25)` 并行召回
+- 用 `RRF` 融合多路候选，降低单路偏差
+- 对融合候选做语义重排，保留最相关证据片段
+- 回答时强制引用已检索内容的关键依据
+
+### 3.3 Agentic 检索自检策略
+
+检索后增加一个“检索充分性审查”节点：
+
+- 判断当前证据是否覆盖关键场景与风险点
+- 如不足，自动生成更具体的 refined queries
+- 用 refined queries 再执行一次 Hybrid RAG + Rerank
+- 达到最大检索轮次后进入回答阶段，并显式保留不确定性
+
+### 3.4 回答生成与自检策略
+
+回答必须遵循：
+
+1. 先判断场景，再给建议
+2. 先给高优先级动作，再给补充说明
+3. 若用户提供的信息不完整，先指出缺失条件
+4. 不把推测说成事实
+5. 回答中显式区分：
+   - 已知信息
+   - 基于检索的依据
+   - 合理推断
+   - 需要现场确认的内容
+
+生成草稿后，再进行一次回答安全审查：
+
+- 是否与检索证据一致
+- 是否遗漏高风险人群
+- 是否给出了不安全或过于武断的建议
+- 是否在高风险场景下提醒联系现场指挥/应急部门
+- 是否使用了“唯一正确路线”这类危险表达
+
+若自检失败，则进入修正节点。
+
+## 4. 项目结构
+
+```text
+.
+├─ data/
+│  └─ knowledge_base/
+│     ├─ handbook/
+│     ├─ papers/
+│     ├─ policies/
+│     └─ scenarios/
+├─ src/
+│  └─ evac_agent/
+│     ├─ __init__.py
+│     ├─ config.py
+│     ├─ graph.py
+│     ├─ main.py
+│     ├─ models.py
+│     ├─ prompts.py
+│     └─ rag.py
+├─ .env.example
+└─ pyproject.toml
+```
+
+## 5. 环境准备
+
+建议 Python 3.11+
+
+安装依赖：
+
+```bash
+pip install -e .
+```
+
+配置环境变量：
+
+```bash
+copy .env.example .env
+```
+
+至少设置：
+
+```env
+DEEPSEEK_API_KEY=your_key
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+DEEPSEEK_MODEL=deepseek-chat
+```
+
+可选嵌入配置（如果你不想用默认的 OpenAI 兼容嵌入接口）：
+
+```env
+EMBEDDING_API_KEY=your_embedding_key
+EMBEDDING_BASE_URL=https://api.openai.com/v1
+EMBEDDING_MODEL=text-embedding-3-large
+```
+
+## 6. 运行方式
+
+```bash
+python -m evac_agent.main "商场三层发生疑似火情，如何组织顾客疏散？"
+```
+
+首次运行会递归读取 `data/knowledge_base/` 下的 `.md`、`.txt`、`.pdf` 文件并构建本地 FAISS 索引。
+
+仅预构建或刷新索引：
+
+```bash
+python -m evac_agent.main --prepare-index
+```
+
+强制重建索引：
+
+```bash
+python -m evac_agent.main --prepare-index --rebuild-index
+```
+
+## 6.1 PDF 知识库接入
+
+现在系统已经支持本地 PDF 资料接入。推荐把专业材料放到以下目录：
+
+- `data/knowledge_base/papers/`: 论文 PDF、综述、研究报告
+- `data/knowledge_base/policies/`: 政策法规、标准规范、制度文件
+- `data/knowledge_base/scenarios/`: 真实场景复盘、案例材料、预案样例
+- `data/knowledge_base/handbook/`: 自建知识摘要、术语手册、专家经验
+
+接入建议：
+
+1. 优先放可复制文本的 PDF
+2. 对扫描版 PDF 先做 OCR
+3. 法规资料尽量按地区、场所类型拆分命名
+4. 场景材料建议写清楚场所类型、风险源、人数、特殊人群和处置结果
+
+## 7. 可扩展方向
+
+- 接入更多真实建筑预案 PDF、消防规程、应急演练 SOP
+- 为医院、学校、地铁、化工园区建立专属子知识库
+- 引入 cross-encoder 或 LLM reranker 提升重排精度
+- 接入地图、楼层平面图、实时传感器事件流
+- 输出结构化应急卡片而不是纯文本
+
+## 8. 注意事项
+
+这是一个面向疏散知识辅助的示例系统，不替代现场专业指挥、消防部门或法定应急流程。对于现实中的紧急情况，回答应始终服从当地应急管理和现场指挥要求。

@@ -1,0 +1,30 @@
+{
+  "fingerprint": "547b0e705b3adfbb40c7f62ef878c07e6bf36f8685659f288a1eb33ab9aa85ad",
+  "files": [
+    {
+      "path": "data/knowledge_base/handbook/evacuation_handbook.md",
+      "size": 972,
+      "mtime_ns": 1774280088205808800
+    },
+    {
+      "path": "data/knowledge_base/papers/evacuation_research_digest.md",
+      "size": 1519,
+      "mtime_ns": 1774280045072659200
+    },
+    {
+      "path": "data/knowledge_base/policies/evacuation_policy_digest.md",
+      "size": 1216,
+      "mtime_ns": 1774280060496797100
+    },
+    {
+      "path": "data/knowledge_base/README.md",
+      "size": 773,
+      "mtime_ns": 1774280030496876400
+    },
+    {
+      "path": "data/knowledge_base/scenarios/realistic_scenarios.md",
+      "size": 1548,
+      "mtime_ns": 1774280076475493300
+    }
+  ]
+}
