@@ -1,0 +1,54 @@
+llm:
+  default_provider: "claude"
+  fallback_provider: "deepseek"
+  providers:
+    claude:
+      model: "claude-sonnet-4-20250514"
+      api_key: "${oc.env:ANTHROPIC_API_KEY,null}"
+      max_tokens: 4096
+      temperature: 0.1
+      timeout: 60
+      max_retries: 3
+    openai:
+      model: "gpt-4o"
+      api_key: "${oc.env:OPENAI_API_KEY,null}"
+      max_tokens: 4096
+      temperature: 0.1
+      timeout: 60
+      max_retries: 3
+    deepseek:
+      model: "deepseek-chat"
+      api_key: "${oc.env:DEEPSEEK_API_KEY,null}"
+      base_url: "https://api.deepseek.com/v1"
+      max_tokens: 4096
+      temperature: 0.1
+      timeout: 60
+      max_retries: 3
+    qwen:
+      model: "qwen-plus"
+      api_key: "${oc.env:DASHSCOPE_API_KEY,null}"
+      base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+      max_tokens: 4096
+      temperature: 0.1
+      timeout: 60
+      max_retries: 3
+    glm:
+      model: "glm-4-plus"
+      api_key: "${oc.env:ZHIPU_API_KEY,null}"
+      base_url: "https://open.bigmodel.cn/api/paas/v4"
+      max_tokens: 4096
+      temperature: 0.1
+      timeout: 60
+      max_retries: 3
+    local:
+      model: "qwen2.5:72b"
+      base_url: "http://localhost:11434"
+      max_tokens: 4096
+      temperature: 0.1
+      timeout: 60
+      max_retries: 1
+  routing:
+    classification: "default"
+    generation: "default"
+    evaluation: "default"
+    embedding_query_expansion: "deepseek"

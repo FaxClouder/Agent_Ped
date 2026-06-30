@@ -1,0 +1,15 @@
+langsmith:
+  enabled: false
+  api_key: "${oc.env:LANGSMITH_API_KEY,null}"
+  project_name: "${oc.env:LANGSMITH_PROJECT,ped-agent}"
+  tracing:
+    enabled: true
+    sample_rate: 1.0
+  evaluation:
+    datasets:
+      literature_qa: "ped-agent-literature-qa"
+      experiment_eval: "ped-agent-experiment-eval"
+    auto_eval_on_deploy: false
+  prompts:
+    hub_owner: null
+    version_prefix: "v"

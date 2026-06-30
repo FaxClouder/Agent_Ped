@@ -1,0 +1,16 @@
+app:
+  name: "Ped-Agent"
+  version: "0.1.0"
+  language: "zh"
+  log_level: "INFO"
+  data_dir: "${oc.env:APP_DATA_DIR,./data}"
+  output_dir: "${oc.env:APP_OUTPUT_DIR,./outputs}"
+
+agent:
+  mode: "single"
+  recursion_limit: 25
+  max_tool_calls: 10
+  streaming: true
+  checkpoint:
+    backend: "memory"
+    connection_string: null

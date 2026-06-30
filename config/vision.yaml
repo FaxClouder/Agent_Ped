@@ -1,0 +1,36 @@
+vision:
+  enabled: false
+  backend: "yolo26_bytetrack"
+  detector:
+    model: "yolo26x.pt"
+    confidence: 0.5
+    iou_threshold: 0.45
+    classes: [0]
+    input_size: 1280
+    device: "${oc.env:VISION_DEVICE,cpu}"
+    half_precision: false
+    end2end: true
+  tracker:
+    algorithm: "bytetrack"
+    track_buffer: 30
+    match_thresh: 0.8
+    reid_model: null
+    max_cosine_distance: 0.3
+  coordinate_transform:
+    method: "none"
+    calibration_file: null
+    pixel_per_meter: null
+  preprocessing:
+    resize: null
+    roi_file: null
+    skip_frames: 1
+  postprocessing:
+    min_track_length: 10
+    smoothing: "savgol"
+    smoothing_window: 5
+    interpolation: true
+  output:
+    save_video: false
+    video_codec: "mp4v"
+    trajectory_format: "json"
+    output_dir: "${oc.env:APP_OUTPUT_DIR,./outputs}/trajectories"

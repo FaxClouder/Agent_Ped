@@ -1,0 +1,63 @@
+rag:
+  embedding:
+    model: "BAAI/bge-m3"
+    device: "${oc.env:RAG_DEVICE,cpu}"
+    batch_size: 32
+    normalize: true
+    modes:
+      dense: true
+      sparse: true
+      colbert: false
+  vector_store:
+    backend: "chroma"
+    chroma:
+      persist_directory: "${oc.env:APP_DATA_DIR,./data}/vectordb/chroma"
+      collection_name: "pedestrian_literature"
+    qdrant:
+      url: "http://localhost:6333"
+      collection_name: "pedestrian_literature"
+      api_key: "${oc.env:QDRANT_API_KEY,null}"
+    milvus:
+      uri: "http://localhost:19530"
+      collection_name: "pedestrian_literature"
+  retrieval:
+    top_k: 20
+    rerank_top_k: 5
+    hybrid_weight: 0.7
+    reranker:
+      enabled: true
+      model: "BAAI/bge-reranker-v2-m3"
+      device: "${oc.env:RAG_DEVICE,cpu}"
+  query_transform:
+    enabled: true
+    strategies: ["multi_query"]
+    multi_query_count: 3
+  chunking:
+    strategy: "hierarchical"
+    parent_chunk_size: 2000
+    parent_chunk_overlap: 200
+    child_chunk_size: 400
+    child_chunk_overlap: 50
+    separators: ["\n# ", "\n## ", "\n### ", "\n\n", "\n"]
+  parsing:
+    pdf_parser: "marker"
+    metadata_extractor: "grobid"
+    grobid_url: "http://localhost:8070"
+  sources:
+    semantic_scholar:
+      enabled: true
+      api_key: "${oc.env:S2_API_KEY,null}"
+      max_results: 20
+    arxiv:
+      enabled: true
+      max_results: 20
+    cnki:
+      enabled: false
+      session_cookie: "${oc.env:CNKI_COOKIE,null}"
+    wanfang:
+      enabled: false
+  graph:
+    enabled: false
+    neo4j_uri: "bolt://localhost:7687"
+    neo4j_user: "neo4j"
+    neo4j_password: "${oc.env:NEO4J_PASSWORD,null}"

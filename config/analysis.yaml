@@ -1,0 +1,26 @@
+analysis:
+  default_metrics: ["density", "velocity", "flow_rate", "los"]
+  density:
+    method: "grid"
+    grid_size: [50, 50]
+  velocity:
+    smoothing: true
+    window_size: 5
+  flow:
+    time_bin: 1.0
+  fundamental_diagram:
+    enabled: true
+    models: ["linear", "weidmann"]
+    time_bin: 1.0
+  od_matrix:
+    enabled: true
+    zone_definition_file: null
+  visualization:
+    backend: "plotly"
+    output_dir: "${oc.env:APP_OUTPUT_DIR,./outputs}/figures"
+    theme: "plotly_white"
+    dpi: 150
+    interactive: true
+  statistics:
+    speed_distribution_fit: ["normal", "lognormal"]
+    confidence_level: 0.95
